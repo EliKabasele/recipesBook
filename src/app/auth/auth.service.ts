@@ -1,8 +1,9 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subject, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { IAuthResponseData } from './authResponseData';
+import { User } from './user.models';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +12,8 @@ export class AuthService {
   API_KEY = 'AIzaSyBsyoS_Dfw5ax4GgEqf3XtFAlMQ2h8pepQ';
   signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.API_KEY}`;
   loginUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
+
+  userSubject = new Subject<User>();
 
   constructor(private http: HttpClient) {}
 
@@ -22,7 +25,17 @@ export class AuthService {
         password: userPassword,
         returnSecureToken: true,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        catchError(this.handleError),
+        tap((responseData) =>
+          this.extractAuthenticatedUser(
+            responseData.email,
+            responseData.localId,
+            responseData.idToken,
+            responseData.expiresIn
+          )
+        )
+      );
   }
 
   //--- Login -Method ---------------------------
@@ -33,7 +46,28 @@ export class AuthService {
         password: userPassword,
         returnSecureToken: true,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        catchError(this.handleError),
+        tap((responseData) =>
+          this.extractAuthenticatedUser(
+            responseData.email,
+            responseData.localId,
+            responseData.idToken,
+            responseData.expiresIn
+          )
+        )
+      );
+  }
+
+  private extractAuthenticatedUser(
+    userEmail: string,
+    userId: string,
+    userToken: string,
+    expireIn: string
+  ) {
+    const expirationDate = new Date(new Date().getTime() + +expireIn * 1000);
+    const user = new User(userEmail, userId, userToken, expirationDate);
+    this.userSubject.next(user);
   }
 
   //--- Error Handling -Method ---------------------------
