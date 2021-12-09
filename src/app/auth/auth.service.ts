@@ -1,6 +1,7 @@
+import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Subject, throwError } from 'rxjs';
+import { BehaviorSubject, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { IAuthResponseData } from './authResponseData';
 import { User } from './user.models';
@@ -13,9 +14,10 @@ export class AuthService {
   signUpUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.API_KEY}`;
   loginUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
 
-  userSubject = new Subject<User>();
+  userSubject = new BehaviorSubject<User>(null);
+  tokenExpirationTimer: any;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   //--- Sign Up -Method ---------------------------
   signUp(userEmail: string, userPassword: string) {
@@ -32,7 +34,7 @@ export class AuthService {
             responseData.email,
             responseData.localId,
             responseData.idToken,
-            responseData.expiresIn
+            +responseData.expiresIn
           )
         )
       );
@@ -53,21 +55,79 @@ export class AuthService {
             responseData.email,
             responseData.localId,
             responseData.idToken,
-            responseData.expiresIn
+            +responseData.expiresIn
           )
         )
       );
   }
 
+  //--- Logout -Method ---------------------------
+  logout() {
+    this.userSubject.next(null);
+    this.router.navigate(['/auth']);
+    localStorage.removeItem('userData');
+    if (this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+    }
+    this.tokenExpirationTimer = null;
+  }
+
+  //--- auto - Login -Method ---------------------------
+  autoLogin() {
+    const userData: {
+      email: string;
+      id: string;
+      _token: string;
+      _tokenExpirationDate: string;
+    } = JSON.parse(localStorage.getItem('userData'));
+
+    if (!userData) {
+      return;
+    }
+
+    const loadedUser = new User(
+      userData.email,
+      userData.id,
+      userData._token,
+      new Date(userData._tokenExpirationDate)
+    );
+
+    if (loadedUser.token) {
+      this.userSubject.next(loadedUser);
+      //auto logout the user after <expireIn>-time
+      const expirationDate =
+        new Date(userData._tokenExpirationDate).getTime() -
+        new Date().getTime();
+      this.autoLogout(expirationDate);
+    }
+  }
+
+  //--- handle authentication: extract user after signUp/ login -Method --
   private extractAuthenticatedUser(
     userEmail: string,
     userId: string,
     userToken: string,
-    expireIn: string
+    expireIn: number
   ) {
     const expirationDate = new Date(new Date().getTime() + +expireIn * 1000);
     const user = new User(userEmail, userId, userToken, expirationDate);
     this.userSubject.next(user);
+    //auto logout the user after <expireIn>-time
+    this.autoLogout(expireIn * 1000);
+    //store the user in the local storage
+    localStorage.setItem('userData', JSON.stringify(user));
+  }
+
+  //--- auto - Logout -Method ---------------------------
+  autoLogout(expirationDuration: number) {
+    console.log(
+      'User will be automatically logout in: ' +
+        expirationDuration +
+        ' milli sec'
+    );
+    this.tokenExpirationTimer = setTimeout(() => {
+      this.logout();
+    }, expirationDuration);
   }
 
   //--- Error Handling -Method ---------------------------
