@@ -12,11 +12,7 @@ export class DataStorageService {
   baseUrl =
     'https://angular-recipebook-b564f-default-rtdb.europe-west1.firebasedatabase.app/recipes.json';
 
-  constructor(
-    private http: HttpClient,
-    private recipeService: RecipeService,
-    private authService: AuthService
-  ) {}
+  constructor(private http: HttpClient, private recipeService: RecipeService) {}
 
   storeRecipes() {
     const recipes = this.recipeService.getRecipes();
