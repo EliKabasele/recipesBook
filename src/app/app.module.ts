@@ -8,22 +8,13 @@ import { HeaderComponent } from './header/header.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthComponent } from './auth/auth.component';
-import { LoadingSpinnerComponent } from './shared/loading-spinner/loading-spinner.component';
-import { AlertComponent } from './shared/alert/alert.component';
 import { PlaceholderDirective } from './shared/placeholder/placeholder.directive';
 import { RecipesModule } from './recipes/recipes.module';
 import { ShoppingListModule } from './shopping-list/shopping-list.module';
+import { SharedModule } from './shared/shared.module';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    HeaderComponent,
-
-    AuthComponent,
-    LoadingSpinnerComponent,
-    AlertComponent,
-    PlaceholderDirective,
-  ],
+  declarations: [AppComponent, HeaderComponent, AuthComponent],
   imports: [
     BrowserModule,
     FormsModule,
@@ -34,6 +25,7 @@ import { ShoppingListModule } from './shopping-list/shopping-list.module';
     //-----Features modules
     RecipesModule,
     ShoppingListModule,
+    SharedModule,
   ],
   providers: [
     {

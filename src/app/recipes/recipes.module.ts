@@ -9,7 +9,7 @@ import { RecipesComponent } from './recipes.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { RecipesRoutingModule } from './recipes-routing.module';
-import { DropdownDirective } from '../shared/dropdown.directive';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -19,7 +19,6 @@ import { DropdownDirective } from '../shared/dropdown.directive';
     RecipeItemComponent,
     RecipeDetailsComponent,
     RecipesComponent,
-    DropdownDirective,
   ],
   imports: [
     CommonModule,
@@ -28,7 +27,7 @@ import { DropdownDirective } from '../shared/dropdown.directive';
     ReactiveFormsModule,
 
     RecipesRoutingModule,
+    SharedModule,
   ],
-  exports: [DropdownDirective],
 })
 export class RecipesModule {}
